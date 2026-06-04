@@ -218,17 +218,7 @@ form.addEventListener("submit", async (e) => {
     avisoPrazoPermuta.classList.remove("ativo");
 
     if (resposta.linhaProcessamento) {
-      setTimeout(() => {
-        chamarApi("processarPermutaPendente", {
-          linha: resposta.linhaProcessamento
-        })
-          .then((resultadoProcessamento) => {
-            console.log("Retorno do processamento complementar:", resultadoProcessamento);
-          })
-          .catch((erro) => {
-            console.log("Erro no processamento complementar:", erro.message);
-          });
-      }, 800);
+      tentarProcessarPermuta(resposta.linhaProcessamento, 1);
     } else {
       console.log("Linha de processamento não retornada.");
     }
@@ -330,4 +320,31 @@ function formatarDataBrasileira(dataIso) {
   if (partes.length !== 3) return escaparHtml(dataIso);
 
   return partes[2] + "/" + partes[1] + "/" + partes[0];
+}
+
+function tentarProcessarPermuta(linha, tentativa) {
+  const atraso = tentativa === 1 ? 1500 : 6000;
+
+  setTimeout(() => {
+    chamarApi("processarPermutaPendente", {
+      linha: linha
+    })
+      .then((resultadoProcessamento) => {
+        console.log("Retorno do processamento complementar:", resultadoProcessamento);
+
+        const respostaProcessamento = resultadoProcessamento.resposta || {};
+
+        if (respostaProcessamento.pendente && tentativa < 2) {
+          console.log("Processamento ocupado. Tentando novamente...");
+          tentarProcessarPermuta(linha, tentativa + 1);
+        }
+      })
+      .catch((erro) => {
+        console.log("Erro no processamento complementar:", erro.message);
+
+        if (tentativa < 2) {
+          tentarProcessarPermuta(linha, tentativa + 1);
+        }
+      });
+  }, atraso);
 }
