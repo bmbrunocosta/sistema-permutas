@@ -212,35 +212,32 @@ form.addEventListener("submit", async (e) => {
     avisoPrazoPermuta.textContent = "";
     avisoPrazoPermuta.classList.remove("ativo");
 
-if (resposta.linhaProcessamento) {
-  mensagem.innerHTML +=
-    "<br><br><span style='color:#334e68;'>Iniciando processamento complementar...</span>";
+    if (resposta.linhaProcessamento) {
+      mensagem.innerHTML +=
+        "<br><br><span style='color:#334e68;'>Iniciando processamento complementar...</span>";
 
-  setTimeout(() => {
-    chamarApi("processarPermutaPendente", {
-      linha: resposta.linhaProcessamento
-    })
-      .then(() => {
-        console.log("Processamento complementar concluído.");
+      setTimeout(() => {
+        chamarApi("processarPermutaPendente", {
+          linha: resposta.linhaProcessamento
+        })
+          .then(() => {
+            console.log("Processamento complementar concluído.");
 
-        mensagem.innerHTML +=
-          "<br><span style='color:#0f5132;'>Processamento complementar concluído.</span>";
-      })
-      .catch((erro) => {
-        console.log("Erro no processamento complementar:", erro.message);
+            mensagem.innerHTML +=
+              "<br><span style='color:#0f5132;'>Processamento complementar concluído.</span>";
+          })
+          .catch((erro) => {
+            console.log("Erro no processamento complementar:", erro.message);
 
-        mensagem.innerHTML +=
-          "<br><span style='color:#842029;'>A solicitação foi registrada, mas o processamento complementar não concluiu automaticamente. A rotina de segurança tentará processar em instantes.</span>" +
-          "<br><span style='color:#842029;'>Erro: " + erro.message + "</span>";
-      });
-  }, 800);
+            mensagem.innerHTML +=
+              "<br><span style='color:#842029;'>A solicitação foi registrada, mas o processamento complementar não concluiu automaticamente. A rotina de segurança tentará processar em instantes.</span>" +
+              "<br><span style='color:#842029;'>Erro: " + erro.message + "</span>";
+          });
+      }, 800);
 
-} else {
-  mensagem.innerHTML +=
-    "<br><br><span style='color:#842029;'>A solicitação foi registrada, mas não retornou a linha de processamento.</span>";
-} else {
+    } else {
       console.log("Linha de processamento não retornada.");
-    
+
       mensagem.innerHTML +=
         "<br><br><span style='color:#842029;'>A solicitação foi registrada, mas não retornou a linha de processamento.</span>";
     }
@@ -326,4 +323,3 @@ function obterClasseStatus(status) {
 
   return "status-pendente";
 }
-
