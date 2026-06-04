@@ -3,55 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema de Permutas - 1º GBM</title>
+  <title>Teste API - Sistema de Permutas</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
     body {
-      width: 100%;
-      min-height: 100%;
-      margin: 0;
-      padding: 0;
-      background: #ffffff;
       font-family: Arial, sans-serif;
-      overflow-x: hidden;
-      overflow-y: auto;
-    }
-
-    .app-container {
-      width: 100%;
-      min-height: 100vh;
+      padding: 24px;
       background: #ffffff;
+      color: #102a43;
+      text-align: center;
     }
 
-    .app-frame {
+    button {
       width: 100%;
-      height: 1900px;
+      max-width: 360px;
+      padding: 16px;
       border: none;
-      display: block;
-      background: #ffffff;
+      border-radius: 14px;
+      background: #0b5cad;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
     }
 
-    @media (max-width: 480px) {
-      .app-frame {
-        height: 2100px;
-      }
+    #resultado {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 14px;
+      background: #eef5ff;
+      font-weight: bold;
+      line-height: 1.4;
+      word-break: break-word;
     }
   </style>
 </head>
 
 <body>
-  <div class="app-container">
-    <iframe
-      class="app-frame"
-      scrolling="yes"
-      src="https://script.google.com/macros/s/AKfycby2jfkI1NvqzrJQLQx5qmmFh6yWrqDnIFIoImD--LZ1znySYZhMbzG6HEywA7Uee39-Kg/exec"
-      title="Sistema de Permutas - 1º GBM">
-    </iframe>
-  </div>
+  <h1>Sistema de Permutas</h1>
+  <p>Teste de comunicação GitHub → Apps Script</p>
+
+  <button onclick="testarApi()">Testar conexão</button>
+
+  <div id="resultado">Aguardando teste...</div>
+
+  <script>
+    const URL_API = "https://script.google.com/macros/s/AKfycbyUsEyxtmhkzVYfFgfMgrvnJlm_q4z1Wh6STGTjT6NGtKsg1AfPhltdDvaARCL42GjpFw/exec";
+
+    async function testarApi() {
+      const resultado = document.getElementById("resultado");
+      resultado.textContent = "Testando...";
+
+      try {
+        const resposta = await fetch(URL_API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify({
+            acao: "teste"
+          })
+        });
+
+        const dados = await resposta.json();
+
+        resultado.textContent = JSON.stringify(dados, null, 2);
+
+      } catch (erro) {
+        resultado.textContent =
+          "Erro no teste: " + erro.message;
+      }
+    }
+  </script>
 </body>
 </html>
