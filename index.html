@@ -51,8 +51,8 @@
 
     async function testarApi() {
       const resultado = document.getElementById("resultado");
-      resultado.textContent = "Testando...";
-
+      resultado.textContent = "Carregando militares...";
+    
       try {
         const resposta = await fetch(URL_API, {
           method: "POST",
@@ -60,14 +60,24 @@
             "Content-Type": "text/plain;charset=utf-8"
           },
           body: JSON.stringify({
-            acao: "teste"
+            acao: "carregarMilitares"
           })
         });
-
+    
         const dados = await resposta.json();
-
-        resultado.textContent = JSON.stringify(dados, null, 2);
-
+    
+        if (!dados.sucesso) {
+          resultado.textContent = "Erro: " + dados.mensagem;
+          return;
+        }
+    
+        const militares = dados.militares || [];
+    
+        resultado.innerHTML =
+          "Militares carregados: " + militares.length +
+          "<br><br>Primeiro registro:<br>" +
+          JSON.stringify(militares[0], null, 2);
+    
       } catch (erro) {
         resultado.textContent =
           "Erro no teste: " + erro.message;
