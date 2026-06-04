@@ -1,298 +1,297 @@
-<script>
-  const URL_API = "https://script.google.com/macros/s/AKfycbyyZMbEHQIfDTQ4dbwLHgj2qPqaJW11xLtSVReVVuUxn25-3G4IGN5u7FLWOnqORDfMLQ/exec";
+const URL_API = "https://script.google.com/macros/s/AKfycbyyZMbEHQIfDTQ4dbwLHgj2qPqaJW11xLtSVReVVuUxn25-3G4IGN5u7FLWOnqORDfMLQ/exec";
 
-  const rgEntra = document.getElementById("rgEntra");
-  const rgSai = document.getElementById("rgSai");
-  const idEntra = document.getElementById("idEntra");
-  const idSai = document.getElementById("idSai");
-  const form = document.getElementById("formPermuta");
-  const btnEnviar = document.getElementById("btnEnviar");
-  const mensagem = document.getElementById("mensagem");
-  const dataServico = document.getElementById("dataServico");
-  const avisoPrazoPermuta = document.getElementById("avisoPrazoPermuta");
+const rgEntra = document.getElementById("rgEntra");
+const rgSai = document.getElementById("rgSai");
+const idEntra = document.getElementById("idEntra");
+const idSai = document.getElementById("idSai");
+const form = document.getElementById("formPermuta");
+const btnEnviar = document.getElementById("btnEnviar");
+const mensagem = document.getElementById("mensagem");
+const dataServico = document.getElementById("dataServico");
+const avisoPrazoPermuta = document.getElementById("avisoPrazoPermuta");
 
-  const btnAbrirConsulta = document.getElementById("btnAbrirConsulta");
-  const areaConsulta = document.getElementById("areaConsulta");
-  const rgConsulta = document.getElementById("rgConsulta");
-  const btnConsultar = document.getElementById("btnConsultar");
-  const resultadoConsulta = document.getElementById("resultadoConsulta");
+const btnAbrirConsulta = document.getElementById("btnAbrirConsulta");
+const areaConsulta = document.getElementById("areaConsulta");
+const rgConsulta = document.getElementById("rgConsulta");
+const btnConsultar = document.getElementById("btnConsultar");
+const resultadoConsulta = document.getElementById("resultadoConsulta");
 
-  let militaresPorRG = {};
-  let timerConsultaEntra = null;
-  let timerConsultaSai = null;
+let militaresPorRG = {};
+let timerConsultaEntra = null;
+let timerConsultaSai = null;
 
-  carregarMilitares();
+carregarMilitares();
 
-  async function chamarApi(acao, dados = {}) {
-    const resposta = await fetch(URL_API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
-      body: JSON.stringify({
-        acao: acao,
-        dados: dados
-      })
+async function chamarApi(acao, dados = {}) {
+  const resposta = await fetch(URL_API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({
+      acao: acao,
+      dados: dados
+    })
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resultado.sucesso) {
+    throw new Error(resultado.mensagem || "Erro ao executar a ação.");
+  }
+
+  return resultado;
+}
+
+async function carregarMilitares() {
+  try {
+    const resultado = await chamarApi("carregarMilitares");
+    const militares = resultado.militares || [];
+
+    militaresPorRG = {};
+
+    militares.forEach((militar) => {
+      militaresPorRG[militar.rg] = militar;
     });
+  } catch (erro) {
+    militaresPorRG = {};
+    console.log("Erro ao carregar militares:", erro.message);
+  }
+}
 
-    const resultado = await resposta.json();
+rgEntra.addEventListener("input", () => {
+  tratarDigitacaoRG(rgEntra, idEntra, "entra");
+});
 
-    if (!resultado.sucesso) {
-      throw new Error(resultado.mensagem || "Erro ao executar a ação.");
-    }
+rgSai.addEventListener("input", () => {
+  tratarDigitacaoRG(rgSai, idSai, "sai");
+});
 
-    return resultado;
+rgEntra.addEventListener("blur", () => {
+  mostrarIdentificacaoLocal(rgEntra, idEntra);
+});
+
+rgSai.addEventListener("blur", () => {
+  mostrarIdentificacaoLocal(rgSai, idSai);
+});
+
+dataServico.addEventListener("change", () => {
+  verificarPrazoPermuta();
+});
+
+dataServico.addEventListener("input", () => {
+  verificarPrazoPermuta();
+});
+
+btnAbrirConsulta.addEventListener("click", () => {
+  areaConsulta.classList.toggle("ativa");
+
+  if (areaConsulta.classList.contains("ativa")) {
+    rgConsulta.focus();
+  }
+});
+
+rgConsulta.addEventListener("input", () => {
+  rgConsulta.value = limparRG(rgConsulta.value);
+});
+
+btnConsultar.addEventListener("click", () => {
+  consultarPermutasFuturas();
+});
+
+function limparRG(valor) {
+  return String(valor || "").replace(/\D/g, "").slice(0, 7);
+}
+
+function tratarDigitacaoRG(input, elementoResultado, tipo) {
+  input.value = limparRG(input.value);
+
+  elementoResultado.textContent = "";
+  elementoResultado.classList.remove("erro-identificacao");
+
+  if (tipo === "entra") {
+    clearTimeout(timerConsultaEntra);
+
+    timerConsultaEntra = setTimeout(() => {
+      mostrarIdentificacaoLocal(input, elementoResultado);
+    }, 600);
   }
 
-  async function carregarMilitares() {
-    try {
-      const resultado = await chamarApi("carregarMilitares");
-      const militares = resultado.militares || [];
+  if (tipo === "sai") {
+    clearTimeout(timerConsultaSai);
 
-      militaresPorRG = {};
-
-      militares.forEach((militar) => {
-        militaresPorRG[militar.rg] = militar;
-      });
-    } catch (erro) {
-      militaresPorRG = {};
-      console.log("Erro ao carregar militares:", erro.message);
-    }
+    timerConsultaSai = setTimeout(() => {
+      mostrarIdentificacaoLocal(input, elementoResultado);
+    }, 600);
   }
+}
 
-  rgEntra.addEventListener("input", () => {
-    tratarDigitacaoRG(rgEntra, idEntra, "entra");
-  });
+function mostrarIdentificacaoLocal(input, elementoResultado) {
+  const rg = limparRG(input.value);
 
-  rgSai.addEventListener("input", () => {
-    tratarDigitacaoRG(rgSai, idSai, "sai");
-  });
+  elementoResultado.textContent = "";
+  elementoResultado.classList.remove("erro-identificacao");
 
-  rgEntra.addEventListener("blur", () => {
-    mostrarIdentificacaoLocal(rgEntra, idEntra);
-  });
+  if (rg.length < 4) return;
 
-  rgSai.addEventListener("blur", () => {
-    mostrarIdentificacaoLocal(rgSai, idSai);
-  });
+  const militar = militaresPorRG[rg];
 
-  dataServico.addEventListener("change", () => {
-    verificarPrazoPermuta();
-  });
-
-  dataServico.addEventListener("input", () => {
-    verificarPrazoPermuta();
-  });
-
-  btnAbrirConsulta.addEventListener("click", () => {
-    areaConsulta.classList.toggle("ativa");
-
-    if (areaConsulta.classList.contains("ativa")) {
-      rgConsulta.focus();
-    }
-  });
-
-  rgConsulta.addEventListener("input", () => {
-    rgConsulta.value = limparRG(rgConsulta.value);
-  });
-
-  btnConsultar.addEventListener("click", () => {
-    consultarPermutasFuturas();
-  });
-
-  function limparRG(valor) {
-    return String(valor || "").replace(/\D/g, "").slice(0, 7);
-  }
-
-  function tratarDigitacaoRG(input, elementoResultado, tipo) {
-    input.value = limparRG(input.value);
-
-    elementoResultado.textContent = "";
+  if (militar) {
+    elementoResultado.textContent = militar.identificacao;
     elementoResultado.classList.remove("erro-identificacao");
-
-    if (tipo === "entra") {
-      clearTimeout(timerConsultaEntra);
-
-      timerConsultaEntra = setTimeout(() => {
-        mostrarIdentificacaoLocal(input, elementoResultado);
-      }, 600);
-    }
-
-    if (tipo === "sai") {
-      clearTimeout(timerConsultaSai);
-
-      timerConsultaSai = setTimeout(() => {
-        mostrarIdentificacaoLocal(input, elementoResultado);
-      }, 600);
-    }
   }
+}
 
-  function mostrarIdentificacaoLocal(input, elementoResultado) {
-    const rg = limparRG(input.value);
+function verificarPrazoPermuta() {
+  const valorData = dataServico.value;
 
-    elementoResultado.textContent = "";
-    elementoResultado.classList.remove("erro-identificacao");
+  avisoPrazoPermuta.textContent = "";
+  avisoPrazoPermuta.classList.remove("ativo");
 
-    if (rg.length < 4) return;
+  if (!valorData) return;
 
-    const militar = militaresPorRG[rg];
+  const partes = valorData.split("-");
 
-    if (militar) {
-      elementoResultado.textContent = militar.identificacao;
-      elementoResultado.classList.remove("erro-identificacao");
-    }
+  if (partes.length !== 3) return;
+
+  const ano = Number(partes[0]);
+  const mes = Number(partes[1]);
+  const dia = Number(partes[2]);
+
+  const dataSelecionada = new Date(ano, mes - 1, dia, 0, 0, 0);
+
+  const limiteMinimo = new Date();
+  limiteMinimo.setHours(limiteMinimo.getHours() + 48);
+
+  if (dataSelecionada < limiteMinimo) {
+    avisoPrazoPermuta.textContent =
+      "Atenção: esta solicitação está fora do prazo regulamentar de 48 horas de antecedência. A permuta será registrada, mas ficará sujeita à análise administrativa.";
+    avisoPrazoPermuta.classList.add("ativo");
   }
+}
 
-  function verificarPrazoPermuta() {
-    const valorData = dataServico.value;
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
+  verificarPrazoPermuta();
+
+  btnEnviar.disabled = true;
+  btnEnviar.textContent = "Enviando...";
+  mensagem.className = "mensagem";
+  mensagem.textContent = "";
+
+  const dados = {
+    email: document.getElementById("email").value,
+    dataServico: document.getElementById("dataServico").value,
+    rgEntra: document.getElementById("rgEntra").value,
+    rgSai: document.getElementById("rgSai").value,
+    observacoes: document.getElementById("observacoes").value
+  };
+
+  try {
+    const resultado = await chamarApi("enviarPermuta", dados);
+    const resposta = resultado.resposta;
+
+    mensagem.innerHTML =
+      resposta.mensagem +
+      "<br><br><strong>Entra:</strong> " + resposta.militarEntra +
+      "<br><strong>Sai:</strong> " + resposta.militarSai;
+
+    mensagem.className = "mensagem sucesso";
+
+    form.reset();
+    idEntra.textContent = "";
+    idSai.textContent = "";
     avisoPrazoPermuta.textContent = "";
     avisoPrazoPermuta.classList.remove("ativo");
 
-    if (!valorData) return;
-
-    const partes = valorData.split("-");
-
-    if (partes.length !== 3) return;
-
-    const ano = Number(partes[0]);
-    const mes = Number(partes[1]);
-    const dia = Number(partes[2]);
-
-    const dataSelecionada = new Date(ano, mes - 1, dia, 0, 0, 0);
-
-    const limiteMinimo = new Date();
-    limiteMinimo.setHours(limiteMinimo.getHours() + 48);
-
-    if (dataSelecionada < limiteMinimo) {
-      avisoPrazoPermuta.textContent =
-        "Atenção: esta solicitação está fora do prazo regulamentar de 48 horas de antecedência. A permuta será registrada, mas ficará sujeita à análise administrativa.";
-      avisoPrazoPermuta.classList.add("ativo");
-    }
-  }
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    verificarPrazoPermuta();
-
-    btnEnviar.disabled = true;
-    btnEnviar.textContent = "Enviando...";
-    mensagem.className = "mensagem";
-    mensagem.textContent = "";
-
-    const dados = {
-      email: document.getElementById("email").value,
-      dataServico: document.getElementById("dataServico").value,
-      rgEntra: document.getElementById("rgEntra").value,
-      rgSai: document.getElementById("rgSai").value,
-      observacoes: document.getElementById("observacoes").value
-    };
-
-    try {
-      const resultado = await chamarApi("enviarPermuta", dados);
-      const resposta = resultado.resposta;
-
-      mensagem.innerHTML =
-        resposta.mensagem +
-        "<br><br><strong>Entra:</strong> " + resposta.militarEntra +
-        "<br><strong>Sai:</strong> " + resposta.militarSai;
-
-      mensagem.className = "mensagem sucesso";
-
-      form.reset();
-      idEntra.textContent = "";
-      idSai.textContent = "";
-      avisoPrazoPermuta.textContent = "";
-      avisoPrazoPermuta.classList.remove("ativo");
-
-      if (resposta.linhaProcessamento) {
-        chamarApi("processarPermutaPendente", {
-          linha: resposta.linhaProcessamento
-        }).catch((erro) => {
-          console.log("Erro no processamento complementar:", erro.message);
-        });
-      }
-
-    } catch (erro) {
-      mensagem.textContent = erro.message;
-      mensagem.className = "mensagem erro";
-    } finally {
-      btnEnviar.disabled = false;
-      btnEnviar.textContent = "Enviar Solicitação";
-    }
-  });
-
-  async function consultarPermutasFuturas() {
-    const rg = limparRG(rgConsulta.value);
-
-    resultadoConsulta.innerHTML = "";
-
-    if (rg.length < 4) {
-      resultadoConsulta.innerHTML =
-        '<div class="mensagem-consulta">Informe um RG válido para consultar.</div>';
-      return;
-    }
-
-    btnConsultar.disabled = true;
-    btnConsultar.textContent = "Consultando...";
-
-    try {
-      const resultado = await chamarApi("consultarPermutasFuturas", {
-        rg: rg
+    if (resposta.linhaProcessamento) {
+      chamarApi("processarPermutaPendente", {
+        linha: resposta.linhaProcessamento
+      }).catch((erro) => {
+        console.log("Erro no processamento complementar:", erro.message);
       });
-
-      exibirPermutasFuturas(resultado.resposta || []);
-
-    } catch (erro) {
-      resultadoConsulta.innerHTML =
-        '<div class="mensagem-consulta">' + erro.message + '</div>';
-    } finally {
-      btnConsultar.disabled = false;
-      btnConsultar.textContent = "Consultar";
     }
+
+  } catch (erro) {
+    mensagem.textContent = erro.message;
+    mensagem.className = "mensagem erro";
+  } finally {
+    btnEnviar.disabled = false;
+    btnEnviar.textContent = "Enviar Solicitação";
+  }
+});
+
+async function consultarPermutasFuturas() {
+  const rg = limparRG(rgConsulta.value);
+
+  resultadoConsulta.innerHTML = "";
+
+  if (rg.length < 4) {
+    resultadoConsulta.innerHTML =
+      '<div class="mensagem-consulta">Informe um RG válido para consultar.</div>';
+    return;
   }
 
-  function exibirPermutasFuturas(permutas) {
-    if (!permutas || permutas.length === 0) {
-      resultadoConsulta.innerHTML =
-        '<div class="mensagem-consulta">Nenhuma permuta futura encontrada para este RG.</div>';
-      return;
-    }
+  btnConsultar.disabled = true;
+  btnConsultar.textContent = "Consultando...";
 
-    let html = "";
-
-    permutas.forEach((permuta) => {
-      const classeStatus = obterClasseStatus(permuta.status);
-
-      html += `
-        <div class="card-permuta">
-          <div class="data">${permuta.dataServico}</div>
-
-          <div class="linha-permuta">
-            <span class="rotulo">Entra:</span> ${permuta.militarEntra}
-          </div>
-
-          <div class="linha-permuta">
-            <span class="rotulo">Sai:</span> ${permuta.militarSai}
-          </div>
-
-          <div class="status ${classeStatus}">
-            ${permuta.status}
-          </div>
-        </div>
-      `;
+  try {
+    const resultado = await chamarApi("consultarPermutasFuturas", {
+      rg: rg
     });
 
-    resultadoConsulta.innerHTML = html;
+    exibirPermutasFuturas(resultado.resposta || []);
+
+  } catch (erro) {
+    resultadoConsulta.innerHTML =
+      '<div class="mensagem-consulta">' + erro.message + '</div>';
+  } finally {
+    btnConsultar.disabled = false;
+    btnConsultar.textContent = "Consultar";
+  }
+}
+
+function exibirPermutasFuturas(permutas) {
+  if (!permutas || permutas.length === 0) {
+    resultadoConsulta.innerHTML =
+      '<div class="mensagem-consulta">Nenhuma permuta futura encontrada para este RG.</div>';
+    return;
   }
 
-  function obterClasseStatus(status) {
-    const texto = String(status || "").trim().toUpperCase();
+  let html = "";
 
-    if (texto === "FEITO") return "status-feito";
-    if (texto === "CANCELADA") return "status-cancelada";
+  permutas.forEach((permuta) => {
+    const classeStatus = obterClasseStatus(permuta.status);
 
-    return "status-pendente";
-  }
-</script>
+    html += `
+      <div class="card-permuta">
+        <div class="data">${permuta.dataServico}</div>
+
+        <div class="linha-permuta">
+          <span class="rotulo">Entra:</span> ${permuta.militarEntra}
+        </div>
+
+        <div class="linha-permuta">
+          <span class="rotulo">Sai:</span> ${permuta.militarSai}
+        </div>
+
+        <div class="status ${classeStatus}">
+          ${permuta.status}
+        </div>
+      </div>
+    `;
+  });
+
+  resultadoConsulta.innerHTML = html;
+}
+
+function obterClasseStatus(status) {
+  const texto = String(status || "").trim().toUpperCase();
+
+  if (texto === "FEITO") return "status-feito";
+  if (texto === "CANCELADA") return "status-cancelada";
+
+  return "status-pendente";
+}
+
