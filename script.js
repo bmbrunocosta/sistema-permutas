@@ -217,6 +217,9 @@ form.addEventListener("submit", async (e) => {
         linha: resposta.linhaProcessamento
       }).catch((erro) => {
         console.log("Erro no processamento complementar:", erro.message);
+      
+        mensagem.innerHTML +=
+          "<br><br><span style='color:#842029;'>A solicitação foi registrada, mas o processamento complementar não concluiu automaticamente. A rotina de segurança tentará processar em instantes.</span>";
       });
     }
 
