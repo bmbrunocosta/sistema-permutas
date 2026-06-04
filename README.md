@@ -33,8 +33,44 @@ Também permite consultar permutas futuras por RG e informa quando uma solicita�
 
 ## Estrutura do projeto
 
-```text
 index.html  → estrutura da página
 style.css   → aparência visual do sistema
 script.js   → funcionamento da interface e comunicação com o Apps Script
 brasao.png  → imagem utilizada no cabeçalho
+
+## Tecnologias utilizadas
+
+* HTML
+* CSS
+* JavaScript
+* GitHub Pages
+* Google Apps Script
+* Google Sheets
+
+## Arquitetura
+
+Este repositório contém a interface web do sistema, hospedada pelo GitHub Pages.
+
+O processamento dos dados, validações, envio de e-mails e integração com a planilha são realizados por meio de Google Apps Script, utilizado como backend/API do sistema.
+
+GitHub Pages → interface do usuário
+Google Apps Script → processamento e API
+Google Sheets → base de dados e controle administrativo
+
+## Nomenclatura de versões
+
+A evolução do sistema segue a seguinte organização:
+
+v1 = versão baseada em Google Forms
+v2 = versão WebApp direto pelo Google Apps Script
+v3 = versão com interface no GitHub Pages e backend em Google Apps Script
+
+## Versão atual
+
+Versão atual: v3.51
+
+A versão v3.51 indica que o sistema utiliza a interface hospedada no GitHub Pages, com backend/API na implantação 51 do Google Apps Script.
+
+## Observação
+
+Este sistema é de uso interno e foi desenvolvido para apoiar a rotina administrativa de controle de permutas no 1º GBM.
