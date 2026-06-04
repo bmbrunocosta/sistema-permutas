@@ -34,6 +34,10 @@ async function chamarApi(acao, dados = {}) {
     })
   });
 
+  if (!resposta.ok) {
+    throw new Error("Falha de comunicação com o servidor.");
+  }
+
   const resultado = await resposta.json();
 
   if (!resultado.sucesso) {
@@ -200,9 +204,9 @@ form.addEventListener("submit", async (e) => {
     const resposta = resultado.resposta;
 
     mensagem.innerHTML =
-      resposta.mensagem +
-      "<br><br><strong>Entra:</strong> " + resposta.militarEntra +
-      "<br><strong>Sai:</strong> " + resposta.militarSai;
+      escaparHtml(resposta.mensagem) +
+      "<br><br><strong>Entra:</strong> " + escaparHtml(resposta.militarEntra) +
+      "<br><strong>Sai:</strong> " + escaparHtml(resposta.militarSai);
 
     mensagem.className = "mensagem sucesso";
 
@@ -220,8 +224,16 @@ form.addEventListener("submit", async (e) => {
         chamarApi("processarPermutaPendente", {
           linha: resposta.linhaProcessamento
         })
-          .then(() => {
-            console.log("Processamento complementar concluído.");
+          .then((resultadoProcessamento) => {
+            console.log("Retorno do processamento complementar:", resultadoProcessamento);
+
+            const respostaProcessamento = resultadoProcessamento.resposta || {};
+
+            if (respostaProcessamento.pendente) {
+              mensagem.innerHTML +=
+                "<br><span style='color:#334e68;'>O processamento complementar será concluído automaticamente em instantes.</span>";
+              return;
+            }
 
             mensagem.innerHTML +=
               "<br><span style='color:#0f5132;'>Processamento complementar concluído.</span>";
@@ -230,8 +242,7 @@ form.addEventListener("submit", async (e) => {
             console.log("Erro no processamento complementar:", erro.message);
 
             mensagem.innerHTML +=
-              "<br><span style='color:#842029;'>A solicitação foi registrada, mas o processamento complementar não concluiu automaticamente. A rotina de segurança tentará processar em instantes.</span>" +
-              "<br><span style='color:#842029;'>Erro: " + erro.message + "</span>";
+              "<br><span style='color:#334e68;'>A solicitação foi registrada. A rotina de segurança continuará tentando processar automaticamente.</span>";
           });
       }, 800);
 
@@ -274,7 +285,7 @@ async function consultarPermutasFuturas() {
 
   } catch (erro) {
     resultadoConsulta.innerHTML =
-      '<div class="mensagem-consulta">' + erro.message + '</div>';
+      '<div class="mensagem-consulta">' + escaparHtml(erro.message) + '</div>';
   } finally {
     btnConsultar.disabled = false;
     btnConsultar.textContent = "Consultar";
@@ -295,18 +306,18 @@ function exibirPermutasFuturas(permutas) {
 
     html += `
       <div class="card-permuta">
-        <div class="data">${permuta.dataServico}</div>
+        <div class="data">${escaparHtml(permuta.dataServico)}</div>
 
         <div class="linha-permuta">
-          <span class="rotulo">Entra:</span> ${permuta.militarEntra}
+          <span class="rotulo">Entra:</span> ${escaparHtml(permuta.militarEntra)}
         </div>
 
         <div class="linha-permuta">
-          <span class="rotulo">Sai:</span> ${permuta.militarSai}
+          <span class="rotulo">Sai:</span> ${escaparHtml(permuta.militarSai)}
         </div>
 
         <div class="status ${classeStatus}">
-          ${permuta.status}
+          ${escaparHtml(permuta.status)}
         </div>
       </div>
     `;
@@ -322,4 +333,13 @@ function obterClasseStatus(status) {
   if (texto === "CANCELADA") return "status-cancelada";
 
   return "status-pendente";
+}
+
+function escaparHtml(valor) {
+  return String(valor || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
