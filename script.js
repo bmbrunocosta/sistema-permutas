@@ -205,9 +205,10 @@ form.addEventListener("submit", async (e) => {
 
     mensagem.innerHTML =
       escaparHtml(resposta.mensagem) +
-      "<br><br><strong>Entra:</strong> " + escaparHtml(resposta.militarEntra) +
+      "<br><br><strong>Data do serviço:</strong> " + formatarDataBrasileira(dados.dataServico) +
+      "<br><strong>Entra:</strong> " + escaparHtml(resposta.militarEntra) +
       "<br><strong>Sai:</strong> " + escaparHtml(resposta.militarSai);
-
+    
     mensagem.className = "mensagem sucesso";
 
     form.reset();
@@ -217,40 +218,19 @@ form.addEventListener("submit", async (e) => {
     avisoPrazoPermuta.classList.remove("ativo");
 
     if (resposta.linhaProcessamento) {
-      mensagem.innerHTML +=
-        "<br><br><span style='color:#334e68;'>Iniciando processamento complementar...</span>";
-
       setTimeout(() => {
         chamarApi("processarPermutaPendente", {
           linha: resposta.linhaProcessamento
         })
           .then((resultadoProcessamento) => {
             console.log("Retorno do processamento complementar:", resultadoProcessamento);
-
-            const respostaProcessamento = resultadoProcessamento.resposta || {};
-
-            if (respostaProcessamento.pendente) {
-              mensagem.innerHTML +=
-                "<br><span style='color:#334e68;'>O processamento complementar será concluído automaticamente em instantes.</span>";
-              return;
-            }
-
-            mensagem.innerHTML +=
-              "<br><span style='color:#0f5132;'>Processamento complementar concluído.</span>";
           })
           .catch((erro) => {
             console.log("Erro no processamento complementar:", erro.message);
-
-            mensagem.innerHTML +=
-              "<br><span style='color:#334e68;'>A solicitação foi registrada. A rotina de segurança continuará tentando processar automaticamente.</span>";
           });
       }, 800);
-
     } else {
       console.log("Linha de processamento não retornada.");
-
-      mensagem.innerHTML +=
-        "<br><br><span style='color:#842029;'>A solicitação foi registrada, mas não retornou a linha de processamento.</span>";
     }
 
   } catch (erro) {
@@ -342,4 +322,12 @@ function escaparHtml(valor) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function formatarDataBrasileira(dataIso) {
+  const partes = String(dataIso || "").split("-");
+
+  if (partes.length !== 3) return escaparHtml(dataIso);
+
+  return partes[2] + "/" + partes[1] + "/" + partes[0];
 }
