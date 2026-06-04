@@ -215,12 +215,25 @@ form.addEventListener("submit", async (e) => {
     if (resposta.linhaProcessamento) {
       chamarApi("processarPermutaPendente", {
         linha: resposta.linhaProcessamento
-      }).catch((erro) => {
-        console.log("Erro no processamento complementar:", erro.message);
-      
-        mensagem.innerHTML +=
-          "<br><br><span style='color:#842029;'>A solicitação foi registrada, mas o processamento complementar não concluiu automaticamente. A rotina de segurança tentará processar em instantes.</span>";
-      });
+      })
+        .then(() => {
+          console.log("Processamento complementar concluído.");
+    
+          mensagem.innerHTML +=
+            "<br><br><span style='color:#0f5132;'>Processamento complementar concluído.</span>";
+        })
+        .catch((erro) => {
+          console.log("Erro no processamento complementar:", erro.message);
+    
+          mensagem.innerHTML +=
+            "<br><br><span style='color:#842029;'>A solicitação foi registrada, mas o processamento complementar não concluiu automaticamente. A rotina de segurança tentará processar em instantes.</span>" +
+            "<br><span style='color:#842029;'>Erro: " + erro.message + "</span>";
+        });
+    } else {
+      console.log("Linha de processamento não retornada.");
+    
+      mensagem.innerHTML +=
+        "<br><br><span style='color:#842029;'>A solicitação foi registrada, mas não retornou a linha de processamento.</span>";
     }
 
   } catch (erro) {
