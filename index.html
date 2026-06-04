@@ -3,85 +3,696 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teste API - Sistema de Permutas</title>
+  <title>Sistema de Permutas - 1º GBM</title>
 
   <style>
-    body {
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
       font-family: Arial, sans-serif;
-      padding: 24px;
       background: #ffffff;
+      color: #1f2933;
+      -webkit-text-size-adjust: none;
+      text-size-adjust: none;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+
+    .card {
+      width: 100%;
+      min-height: 100vh;
+      margin: 0;
+      padding: 26px 18px 24px;
+      background: #ffffff;
+    }
+
+    .topo-brasao {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .topo-brasao img {
+      width: 84px;
+      height: auto;
+      display: inline-block;
+    }
+
+    .titulo {
+      text-align: center;
+      font-size: 30px;
+      line-height: 1.1;
+      font-weight: 900;
       color: #102a43;
+      margin: 0 0 8px;
+    }
+
+    .subtitulo {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 600;
+      color: #627d98;
+      margin: 0 0 28px;
+    }
+
+    .campo {
+      width: 100%;
+      margin-bottom: 24px;
       text-align: center;
     }
 
-    button {
-      width: 100%;
-      max-width: 360px;
-      padding: 16px;
-      border: none;
-      border-radius: 14px;
-      background: #0b5cad;
-      color: white;
-      font-size: 18px;
-      font-weight: bold;
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 20px;
+      line-height: 1.2;
+      font-weight: 800;
+      color: #334e68;
     }
 
-    #resultado {
-      margin-top: 20px;
+    input,
+    textarea {
+      display: block;
+      width: 100%;
+      border: 2px solid #bcccdc;
+      border-radius: 16px;
+      padding: 15px 14px;
+      font-size: 22px;
+      line-height: 1.2;
+      text-align: center;
+      background: #ffffff;
+      color: #102a43;
+      outline: none;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: #0b5cad;
+      box-shadow: 0 0 0 5px rgba(11, 92, 173, 0.18);
+    }
+
+    .campo-data-wrapper {
+      width: 100%;
+      border: 2px solid #bcccdc;
+      border-radius: 16px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .campo-data-wrapper:focus-within {
+      border-color: #0b5cad;
+      box-shadow: 0 0 0 5px rgba(11, 92, 173, 0.18);
+    }
+
+    .campo-data-wrapper input[type="date"] {
+      width: 100%;
+      min-height: 58px;
+      border: none;
+      border-radius: 0;
+      padding: 15px 14px;
+      background: #ffffff;
+      color: #102a43;
+      font-family: Arial, sans-serif;
+      font-size: 22px;
+      line-height: 1.2;
+      text-align: center;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .campo-data-wrapper input[type="date"]:focus {
+      box-shadow: none;
+    }
+
+    .campo-data-wrapper input[type="date"]::-webkit-date-and-time-value {
+      text-align: center;
+      min-height: 1.2em;
+    }
+
+    .campo-data-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+      opacity: 0.85;
+    }
+
+    .aviso-prazo {
+      display: none;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #fdecea;
+      color: #842029;
+      font-size: 15px;
+      line-height: 1.35;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .aviso-prazo.ativo {
+      display: block;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      text-align: left;
+      font-size: 18px;
+      line-height: 1.45;
+    }
+
+    .identificacao {
+      margin-top: 7px;
+      min-height: 26px;
+      font-size: 21px;
+      line-height: 1.2;
+      font-weight: 900;
+      color: #0b5cad;
+      text-align: center;
+    }
+
+    .erro-identificacao {
+      color: #c0392b;
+      font-weight: 900;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: 17px;
+      padding: 20px 14px;
+      font-size: 21px;
+      line-height: 1.2;
+      font-weight: 900;
+      color: #ffffff;
+      background: #0b5cad;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+
+    button:hover {
+      background: #084985;
+    }
+
+    button:disabled {
+      background: #9fb3c8;
+      cursor: not-allowed;
+    }
+
+    .botao-secundario {
+      background: #eef5ff;
+      color: #0b5cad;
+      border: 2px solid #0b5cad;
+      margin-top: 16px;
+    }
+
+    .botao-secundario:hover {
+      background: #dbeafe;
+    }
+
+    .mensagem {
+      margin-top: 26px;
       padding: 16px;
+      border-radius: 16px;
+      text-align: center;
+      display: none;
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.45;
+    }
+
+    .mensagem.sucesso {
+      display: block;
+      background: #e3f9e5;
+      color: #0f5132;
+    }
+
+    .mensagem.erro {
+      display: block;
+      background: #fdecea;
+      color: #842029;
+    }
+
+    .consulta-box {
+      margin-top: 22px;
+    }
+
+    .area-consulta {
+      display: none;
+      margin-top: 22px;
+      padding-top: 22px;
+      border-top: 2px solid #e4e7eb;
+    }
+
+    .area-consulta.ativa {
+      display: block;
+    }
+
+    .resultado-consulta {
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    .card-permuta {
+      border: 1.5px solid #d9e2ec;
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background: #f8fbff;
+      color: #102a43;
+      font-size: 15px;
+      line-height: 1.3;
+    }
+
+    .card-permuta .data {
+      font-size: 17px;
+      font-weight: 900;
+      color: #0b5cad;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .card-permuta .linha-permuta {
+      margin-bottom: 4px;
+    }
+
+    .card-permuta .rotulo {
+      font-weight: 900;
+      color: #334e68;
+    }
+
+    .card-permuta .status {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid #e4e7eb;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .status-feito {
+      color: #1f8f3a;
+    }
+
+    .status-cancelada {
+      color: #b3261e;
+    }
+
+    .status-pendente {
+      color: #b7791f;
+    }
+
+    .mensagem-consulta {
+      padding: 14px;
       border-radius: 14px;
       background: #eef5ff;
-      font-weight: bold;
+      color: #102a43;
+      font-weight: 800;
+      text-align: center;
       line-height: 1.4;
-      word-break: break-word;
+    }
+
+    .rodape {
+      text-align: center;
+      margin-top: 28px;
+      font-size: 13px;
+      color: #829ab1;
     }
   </style>
 </head>
 
 <body>
-  <h1>Sistema de Permutas</h1>
-  <p>Teste de comunicação GitHub → Apps Script</p>
+  <div class="container">
+    <div class="card">
+      <div class="titulo">Sistema de Permutas</div>
+      <div class="subtitulo">1º GBM</div>
 
-  <button onclick="testarApi()">Testar conexão</button>
+      <form id="formPermuta">
+        <div class="campo">
+          <label for="email">E-mail do Responsável pela Permuta</label>
+          <input type="email" id="email" required autocomplete="email">
+        </div>
 
-  <div id="resultado">Aguardando teste...</div>
+        <div class="campo">
+          <label for="dataServico">Data do Serviço</label>
+          <div class="campo-data-wrapper">
+            <input type="date" id="dataServico" required>
+          </div>
+          <div id="avisoPrazoPermuta" class="aviso-prazo"></div>
+        </div>
+
+        <div class="campo">
+          <label for="rgEntra">RG do Militar que Entra</label>
+          <input type="text" id="rgEntra" inputmode="numeric" maxlength="7" required>
+          <div id="idEntra" class="identificacao"></div>
+        </div>
+
+        <div class="campo">
+          <label for="rgSai">RG do Militar que Sai</label>
+          <input type="text" id="rgSai" inputmode="numeric" maxlength="7" required>
+          <div id="idSai" class="identificacao"></div>
+        </div>
+
+        <div class="campo">
+          <label for="observacoes">Observações</label>
+          <textarea id="observacoes" placeholder="Digite aqui alguma informação adicional, se necessário."></textarea>
+        </div>
+
+        <button type="submit" id="btnEnviar">Enviar Solicitação</button>
+
+        <div id="mensagem" class="mensagem"></div>
+      </form>
+
+      <div class="consulta-box">
+        <button type="button" id="btnAbrirConsulta" class="botao-secundario">
+          Consultar Permutas Futuras
+        </button>
+
+        <div id="areaConsulta" class="area-consulta">
+          <div class="campo">
+            <label for="rgConsulta">RG para Consulta</label>
+            <input type="text" id="rgConsulta" inputmode="numeric" maxlength="7">
+          </div>
+
+          <button type="button" id="btnConsultar">Consultar</button>
+
+          <div id="resultadoConsulta" class="resultado-consulta"></div>
+        </div>
+      </div>
+
+      <div class="rodape">Sistema interno de solicitação de permutas • GitHub</div>
+    </div>
+  </div>
 
   <script>
-    const URL_API = "https://script.google.com/macros/s/AKfycbzGMUdOXzqeQ8mot5KUJGl4f2-P1SZjO0Pfq3CWFssWmTjClpf_vUAPXhyYx5PYL5q4lQ/exec";
+    const URL_API = "https://script.google.com/macros/s/AKfycbwlLTGH0EPijAtZqvBFJPxCjqNKExsXMkPIOOcjB-OZMNKdyiiEgWbkIsTRFM2cwTsQ4Q/exec";
 
-    async function testarApi() {
-      const resultado = document.getElementById("resultado");
-      resultado.textContent = "Carregando militares...";
-    
-      try {
-        const resposta = await fetch(URL_API, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-          },
-          body: JSON.stringify({
-            acao: "carregarMilitares"
-          })
-        });
-    
-        const dados = await resposta.json();
-    
-        if (!dados.sucesso) {
-          resultado.textContent = "Erro: " + dados.mensagem;
-          return;
-        }
-    
-        const militares = dados.militares || [];
-    
-        resultado.innerHTML =
-          "Militares carregados: " + militares.length +
-          "<br><br>Primeiro registro:<br>" +
-          JSON.stringify(militares[0], null, 2);
-    
-      } catch (erro) {
-        resultado.textContent =
-          "Erro no teste: " + erro.message;
+    const rgEntra = document.getElementById("rgEntra");
+    const rgSai = document.getElementById("rgSai");
+    const idEntra = document.getElementById("idEntra");
+    const idSai = document.getElementById("idSai");
+    const form = document.getElementById("formPermuta");
+    const btnEnviar = document.getElementById("btnEnviar");
+    const mensagem = document.getElementById("mensagem");
+    const dataServico = document.getElementById("dataServico");
+    const avisoPrazoPermuta = document.getElementById("avisoPrazoPermuta");
+
+    const btnAbrirConsulta = document.getElementById("btnAbrirConsulta");
+    const areaConsulta = document.getElementById("areaConsulta");
+    const rgConsulta = document.getElementById("rgConsulta");
+    const btnConsultar = document.getElementById("btnConsultar");
+    const resultadoConsulta = document.getElementById("resultadoConsulta");
+
+    let militaresPorRG = {};
+    let timerConsultaEntra = null;
+    let timerConsultaSai = null;
+
+    carregarMilitares();
+
+    async function chamarApi(acao, dados = {}) {
+      const resposta = await fetch(URL_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({
+          acao: acao,
+          dados: dados
+        })
+      });
+
+      const resultado = await resposta.json();
+
+      if (!resultado.sucesso) {
+        throw new Error(resultado.mensagem || "Erro ao executar a ação.");
       }
+
+      return resultado;
+    }
+
+    async function carregarMilitares() {
+      try {
+        const resultado = await chamarApi("carregarMilitares");
+        const militares = resultado.militares || [];
+
+        militaresPorRG = {};
+
+        militares.forEach((militar) => {
+          militaresPorRG[militar.rg] = militar;
+        });
+      } catch (erro) {
+        militaresPorRG = {};
+        console.log("Erro ao carregar militares:", erro.message);
+      }
+    }
+
+    rgEntra.addEventListener("input", () => {
+      tratarDigitacaoRG(rgEntra, idEntra, "entra");
+    });
+
+    rgSai.addEventListener("input", () => {
+      tratarDigitacaoRG(rgSai, idSai, "sai");
+    });
+
+    rgEntra.addEventListener("blur", () => {
+      mostrarIdentificacaoLocal(rgEntra, idEntra);
+    });
+
+    rgSai.addEventListener("blur", () => {
+      mostrarIdentificacaoLocal(rgSai, idSai);
+    });
+
+    dataServico.addEventListener("change", () => {
+      verificarPrazoPermuta();
+    });
+
+    dataServico.addEventListener("input", () => {
+      verificarPrazoPermuta();
+    });
+
+    btnAbrirConsulta.addEventListener("click", () => {
+      areaConsulta.classList.toggle("ativa");
+
+      if (areaConsulta.classList.contains("ativa")) {
+        rgConsulta.focus();
+      }
+    });
+
+    rgConsulta.addEventListener("input", () => {
+      rgConsulta.value = limparRG(rgConsulta.value);
+    });
+
+    btnConsultar.addEventListener("click", () => {
+      consultarPermutasFuturas();
+    });
+
+    function limparRG(valor) {
+      return String(valor || "").replace(/\D/g, "").slice(0, 7);
+    }
+
+    function tratarDigitacaoRG(input, elementoResultado, tipo) {
+      input.value = limparRG(input.value);
+
+      elementoResultado.textContent = "";
+      elementoResultado.classList.remove("erro-identificacao");
+
+      if (tipo === "entra") {
+        clearTimeout(timerConsultaEntra);
+
+        timerConsultaEntra = setTimeout(() => {
+          mostrarIdentificacaoLocal(input, elementoResultado);
+        }, 600);
+      }
+
+      if (tipo === "sai") {
+        clearTimeout(timerConsultaSai);
+
+        timerConsultaSai = setTimeout(() => {
+          mostrarIdentificacaoLocal(input, elementoResultado);
+        }, 600);
+      }
+    }
+
+    function mostrarIdentificacaoLocal(input, elementoResultado) {
+      const rg = limparRG(input.value);
+
+      elementoResultado.textContent = "";
+      elementoResultado.classList.remove("erro-identificacao");
+
+      if (rg.length < 4) return;
+
+      const militar = militaresPorRG[rg];
+
+      if (militar) {
+        elementoResultado.textContent = militar.identificacao;
+        elementoResultado.classList.remove("erro-identificacao");
+      }
+    }
+
+    function verificarPrazoPermuta() {
+      const valorData = dataServico.value;
+
+      avisoPrazoPermuta.textContent = "";
+      avisoPrazoPermuta.classList.remove("ativo");
+
+      if (!valorData) return;
+
+      const partes = valorData.split("-");
+
+      if (partes.length !== 3) return;
+
+      const ano = Number(partes[0]);
+      const mes = Number(partes[1]);
+      const dia = Number(partes[2]);
+
+      const dataSelecionada = new Date(ano, mes - 1, dia, 0, 0, 0);
+
+      const limiteMinimo = new Date();
+      limiteMinimo.setHours(limiteMinimo.getHours() + 48);
+
+      if (dataSelecionada < limiteMinimo) {
+        avisoPrazoPermuta.textContent =
+          "Atenção: esta solicitação está fora do prazo regulamentar de 48 horas de antecedência. A permuta será registrada, mas ficará sujeita à análise administrativa.";
+        avisoPrazoPermuta.classList.add("ativo");
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      verificarPrazoPermuta();
+
+      btnEnviar.disabled = true;
+      btnEnviar.textContent = "Enviando...";
+      mensagem.className = "mensagem";
+      mensagem.textContent = "";
+
+      const dados = {
+        email: document.getElementById("email").value,
+        dataServico: document.getElementById("dataServico").value,
+        rgEntra: document.getElementById("rgEntra").value,
+        rgSai: document.getElementById("rgSai").value,
+        observacoes: document.getElementById("observacoes").value
+      };
+
+      try {
+        const resultado = await chamarApi("enviarPermuta", dados);
+        const resposta = resultado.resposta;
+
+        mensagem.innerHTML =
+          resposta.mensagem +
+          "<br><br><strong>Entra:</strong> " + resposta.militarEntra +
+          "<br><strong>Sai:</strong> " + resposta.militarSai;
+
+        mensagem.className = "mensagem sucesso";
+
+        form.reset();
+        idEntra.textContent = "";
+        idSai.textContent = "";
+        avisoPrazoPermuta.textContent = "";
+        avisoPrazoPermuta.classList.remove("ativo");
+
+        if (resposta.linhaProcessamento) {
+          chamarApi("processarPermutaPendente", {
+            linha: resposta.linhaProcessamento
+          }).catch((erro) => {
+            console.log("Erro no processamento complementar:", erro.message);
+          });
+        }
+
+      } catch (erro) {
+        mensagem.textContent = erro.message;
+        mensagem.className = "mensagem erro";
+      } finally {
+        btnEnviar.disabled = false;
+        btnEnviar.textContent = "Enviar Solicitação";
+      }
+    });
+
+    async function consultarPermutasFuturas() {
+      const rg = limparRG(rgConsulta.value);
+
+      resultadoConsulta.innerHTML = "";
+
+      if (rg.length < 4) {
+        resultadoConsulta.innerHTML =
+          '<div class="mensagem-consulta">Informe um RG válido para consultar.</div>';
+        return;
+      }
+
+      btnConsultar.disabled = true;
+      btnConsultar.textContent = "Consultando...";
+
+      try {
+        const resultado = await chamarApi("consultarPermutasFuturas", {
+          rg: rg
+        });
+
+        exibirPermutasFuturas(resultado.resposta || []);
+
+      } catch (erro) {
+        resultadoConsulta.innerHTML =
+          '<div class="mensagem-consulta">' + erro.message + '</div>';
+      } finally {
+        btnConsultar.disabled = false;
+        btnConsultar.textContent = "Consultar";
+      }
+    }
+
+    function exibirPermutasFuturas(permutas) {
+      if (!permutas || permutas.length === 0) {
+        resultadoConsulta.innerHTML =
+          '<div class="mensagem-consulta">Nenhuma permuta futura encontrada para este RG.</div>';
+        return;
+      }
+
+      let html = "";
+
+      permutas.forEach((permuta) => {
+        const classeStatus = obterClasseStatus(permuta.status);
+
+        html += `
+          <div class="card-permuta">
+            <div class="data">${permuta.dataServico}</div>
+
+            <div class="linha-permuta">
+              <span class="rotulo">Entra:</span> ${permuta.militarEntra}
+            </div>
+
+            <div class="linha-permuta">
+              <span class="rotulo">Sai:</span> ${permuta.militarSai}
+            </div>
+
+            <div class="status ${classeStatus}">
+              ${permuta.status}
+            </div>
+          </div>
+        `;
+      });
+
+      resultadoConsulta.innerHTML = html;
+    }
+
+    function obterClasseStatus(status) {
+      const texto = String(status || "").trim().toUpperCase();
+
+      if (texto === "FEITO") return "status-feito";
+      if (texto === "CANCELADA") return "status-cancelada";
+
+      return "status-pendente";
     }
   </script>
 </body>
