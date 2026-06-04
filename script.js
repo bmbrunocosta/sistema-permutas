@@ -217,6 +217,12 @@ form.addEventListener("submit", async (e) => {
     avisoPrazoPermuta.textContent = "";
     avisoPrazoPermuta.classList.remove("ativo");
 
+    if (resposta.linhaProcessamento) {
+      tentarProcessarPermuta(resposta.linhaProcessamento, 1);
+    } else {
+      console.log("Linha de processamento não retornada.");
+    }
+
   } catch (erro) {
     mensagem.textContent = erro.message;
     mensagem.className = "mensagem erro";
