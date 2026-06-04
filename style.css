@@ -364,3 +364,12 @@ button {
   font-size: 13px;
   color: #829ab1;
 }
+
+.container,
+.card,
+.campo,
+.consulta-box,
+.area-consulta,
+.resultado-consulta {
+  max-width: 100%;
+}
