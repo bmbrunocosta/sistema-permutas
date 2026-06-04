@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbxo1eWOEKHCmpdg2RULvOJap1V8Sj27e9vhXBpo7fwmUlwrDc9nNNr31gZVhpZ1ubZLqw/exec";
+const URL_API = "https://script.google.com/macros/s/AKfycbyNvB9vSiBM8aEZ_jbLMCfHAiyJ_9xgtNy8iZjxEZ45yw20dTNpY9SykWQTKJaeZBH8Uw/exec";
 
 const rgEntra = document.getElementById("rgEntra");
 const rgSai = document.getElementById("rgSai");
@@ -216,12 +216,6 @@ form.addEventListener("submit", async (e) => {
     idSai.textContent = "";
     avisoPrazoPermuta.textContent = "";
     avisoPrazoPermuta.classList.remove("ativo");
-
-    if (resposta.linhaProcessamento) {
-      tentarProcessarPermuta(resposta.linhaProcessamento, 1);
-    } else {
-      console.log("Linha de processamento não retornada.");
-    }
 
   } catch (erro) {
     mensagem.textContent = erro.message;
