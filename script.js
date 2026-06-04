@@ -53,9 +53,16 @@ async function carregarMilitares() {
     militares.forEach((militar) => {
       militaresPorRG[militar.rg] = militar;
     });
+
+    console.log("Militares carregados:", militares.length);
+
   } catch (erro) {
     militaresPorRG = {};
     console.log("Erro ao carregar militares:", erro.message);
+
+    mensagem.textContent =
+      "Erro ao carregar a base de militares. Verifique a conexão ou o link da API.";
+    mensagem.className = "mensagem erro";
   }
 }
 
