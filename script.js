@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbyyZMbEHQIfDTQ4dbwLHgj2qPqaJW11xLtSVReVVuUxn25-3G4IGN5u7FLWOnqORDfMLQ/exec";
+const URL_API = "https://script.google.com/macros/s/AKfycbxxLlG_TUkLGA76yCxFWBfF8rSPH8QVCP1yPvMfVcB5CV9ywC_6adOldXYQdzbN990t1w/exec";
 
 const rgEntra = document.getElementById("rgEntra");
 const rgSai = document.getElementById("rgSai");
