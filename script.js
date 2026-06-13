@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbzCI88-8yk2i5p6MiB5uPXHilVQcNcPgw3_XET8lCk69vyOWnA5frugAlZHEc-rRpKPug/exec";
+const URL_API = "https://script.google.com/macros/s/AKfycbxknTIwCNprGaNG0v6hXGsliYGjvjC3lnm2QJz2F3cELkXHl3Z2xkqVgRcfJofCOS8Otg/exec";
 
 const rgEntra = document.getElementById("rgEntra");
 const rgSai = document.getElementById("rgSai");
@@ -166,17 +166,26 @@ function normalizarEmail(valor) {
   return String(valor || "").trim().toLowerCase();
 }
 
-function obterEmailMilitar(militar) {
-  if (!militar) return "";
+function separarEmailsSite(valor) {
+  return String(valor || "")
+    .split(/[;,\n]/)
+    .map(normalizarEmail)
+    .filter(email => email);
+}
 
-  return normalizarEmail(
+function obterEmailsMilitar(militar) {
+  if (!militar) return [];
+
+  const bruto =
     militar.email ||
     militar.eMail ||
     militar.Email ||
     militar.EMAIL ||
     militar.emailCadastrado ||
-    militar.emailCadastro
-  );
+    militar.emailCadastro ||
+    "";
+
+  return separarEmailsSite(bruto);
 }
 
 function tratarDigitacaoRG(input, elementoResultado, tipo) {
@@ -222,6 +231,7 @@ function montarIdentificacaoMilitar(militar) {
   const partes = [];
 
   if (militar.postoGrad) partes.push(militar.postoGrad);
+  if (militar.posto) partes.push(militar.posto);
   if (militar.nomeGuerra) partes.push(militar.nomeGuerra);
   if (militar.qbmp) partes.push(militar.qbmp);
   if (militar.rg) partes.push("RG " + militar.rg);
@@ -430,11 +440,8 @@ function gerarAvisoCancelamentoIndisponivel(permuta) {
   const motivo = String(
     permuta.motivoBloqueioCancelamento ||
     permuta.motivoBloqueio ||
-    permuta.motivoCancelamentoBloqueado ||
-    ""
+    "Entre em contato com a administração."
   ).trim();
-
-  if (!motivo) return "";
 
   return `
     <div class="aviso-cancelamento-indisponivel">
@@ -504,11 +511,9 @@ function validarEmailCancelamento(rgConsultado, email) {
   }
 
   const militarConsultado = militaresPorRG[rgConsultado];
-  const emailCadastrado = obterEmailMilitar(militarConsultado);
+  const emailsCadastrados = obterEmailsMilitar(militarConsultado);
 
-  // Esta conferência local só acontece se a base enviada para o site trouxer o e-mail.
-  // A validação definitiva precisa continuar no Apps Script, dentro da API.
-  if (emailCadastrado && emailNormalizado !== emailCadastrado) {
+  if (emailsCadastrados.length > 0 && !emailsCadastrados.includes(emailNormalizado)) {
     return "O e-mail informado não pertence ao RG consultado. Informe o e-mail cadastrado para esse militar.";
   }
 
