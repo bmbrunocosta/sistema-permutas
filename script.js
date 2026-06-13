@@ -235,7 +235,7 @@ form.addEventListener("submit", async (e) => {
       "<br><br><strong>Data do serviço:</strong> " + formatarDataBrasileira(dados.dataServico) +
       "<br><strong>Entra:</strong> " + escaparHtml(resposta.militarEntra) +
       "<br><strong>Sai:</strong> " + escaparHtml(resposta.militarSai);
-    
+
     mensagem.className = "mensagem sucesso";
 
     form.reset();
@@ -291,7 +291,7 @@ async function consultarPermutasFuturas() {
 
 function exibirPermutasFuturas(permutas) {
   console.log("Permutas recebidas:", permutas);
-  
+
   if (!permutas || permutas.length === 0) {
     resultadoConsulta.innerHTML =
       '<div class="mensagem-consulta">Nenhuma permuta futura encontrada para este RG.</div>';
@@ -302,8 +302,9 @@ function exibirPermutasFuturas(permutas) {
 
   permutas.forEach((permuta) => {
     const classeStatus = obterClasseStatus(permuta.status);
+    const podeCancelar = verificarPodeCancelar(permuta.podeCancelar);
 
-    const botaoCancelar = permuta.podeCancelar
+    const botaoCancelar = podeCancelar
       ? `
         <button type="button" class="botao-cancelar" data-linha="${escaparHtml(permuta.linha)}">
           Solicitar Cancelamento
@@ -347,6 +348,18 @@ function exibirPermutasFuturas(permutas) {
   });
 
   resultadoConsulta.innerHTML = html;
+}
+
+function verificarPodeCancelar(valor) {
+  const texto = String(valor || "").trim().toUpperCase();
+
+  return (
+    valor === true ||
+    texto === "TRUE" ||
+    texto === "VERDADEIRO" ||
+    texto === "SIM" ||
+    texto === "1"
+  );
 }
 
 function obterClasseStatus(status) {
@@ -444,7 +457,6 @@ async function solicitarCodigoCancelamento(linha) {
     botao.textContent = "Enviar Código";
   }
 }
-
 
 async function confirmarCancelamento(linha) {
   const area = document.getElementById("cancelamento-" + linha);
