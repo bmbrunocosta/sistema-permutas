@@ -110,6 +110,33 @@ btnConsultar.addEventListener("click", () => {
   consultarPermutasFuturas();
 });
 
+resultadoConsulta.addEventListener("click", (e) => {
+  const botaoCancelar = e.target.closest(".botao-cancelar");
+  const botaoEnviarCodigo = e.target.closest(".botao-enviar-codigo");
+  const botaoConfirmarCancelamento = e.target.closest(".botao-confirmar-cancelamento");
+
+  if (botaoCancelar) {
+    const linha = botaoCancelar.dataset.linha;
+    const area = document.getElementById("cancelamento-" + linha);
+
+    if (area) {
+      area.classList.toggle("ativa");
+    }
+
+    return;
+  }
+
+  if (botaoEnviarCodigo) {
+    solicitarCodigoCancelamento(botaoEnviarCodigo.dataset.linha);
+    return;
+  }
+
+  if (botaoConfirmarCancelamento) {
+    confirmarCancelamento(botaoConfirmarCancelamento.dataset.linha);
+    return;
+  }
+});
+
 function limparRG(valor) {
   return String(valor || "").replace(/\D/g, "").slice(0, 7);
 }
@@ -274,6 +301,28 @@ function exibirPermutasFuturas(permutas) {
   permutas.forEach((permuta) => {
     const classeStatus = obterClasseStatus(permuta.status);
 
+    const botaoCancelar = permuta.podeCancelar
+      ? `
+        <button type="button" class="botao-cancelar" data-linha="${escaparHtml(permuta.linha)}">
+          Solicitar Cancelamento
+        </button>
+
+        <div class="area-cancelamento" id="cancelamento-${escaparHtml(permuta.linha)}">
+          <input type="email" class="email-cancelamento" placeholder="E-mail para confirmação">
+          <button type="button" class="botao-enviar-codigo" data-linha="${escaparHtml(permuta.linha)}">
+            Enviar Código
+          </button>
+
+          <input type="text" class="codigo-cancelamento" inputmode="numeric" maxlength="6" placeholder="Código recebido">
+          <button type="button" class="botao-confirmar-cancelamento" data-linha="${escaparHtml(permuta.linha)}">
+            Confirmar Cancelamento
+          </button>
+
+          <div class="mensagem-cancelamento"></div>
+        </div>
+      `
+      : "";
+
     html += `
       <div class="card-permuta">
         <div class="data">${escaparHtml(permuta.dataServico)}</div>
@@ -289,6 +338,8 @@ function exibirPermutasFuturas(permutas) {
         <div class="status ${classeStatus}">
           ${escaparHtml(permuta.status)}
         </div>
+
+        ${botaoCancelar}
       </div>
     `;
   });
@@ -347,4 +398,104 @@ function tentarProcessarPermuta(linha, tentativa) {
         }
       });
   }, atraso);
+}
+
+async function solicitarCodigoCancelamento(linha) {
+  const area = document.getElementById("cancelamento-" + linha);
+
+  if (!area) return;
+
+  const emailInput = area.querySelector(".email-cancelamento");
+  const mensagemCancelamento = area.querySelector(".mensagem-cancelamento");
+  const botao = area.querySelector(".botao-enviar-codigo");
+
+  const email = emailInput.value.trim();
+
+  mensagemCancelamento.textContent = "";
+  mensagemCancelamento.className = "mensagem-cancelamento";
+
+  if (!email) {
+    mensagemCancelamento.textContent = "Informe o e-mail para receber o código.";
+    mensagemCancelamento.classList.add("erro");
+    return;
+  }
+
+  botao.disabled = true;
+  botao.textContent = "Enviando...";
+
+  try {
+    const resultado = await chamarApi("solicitarCodigoCancelamentoPermuta", {
+      linha: linha,
+      email: email
+    });
+
+    mensagemCancelamento.textContent =
+      resultado.mensagem || "Código enviado para o e-mail informado.";
+    mensagemCancelamento.classList.add("sucesso");
+
+  } catch (erro) {
+    mensagemCancelamento.textContent = erro.message;
+    mensagemCancelamento.classList.add("erro");
+
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Enviar Código";
+  }
+}
+
+
+async function confirmarCancelamento(linha) {
+  const area = document.getElementById("cancelamento-" + linha);
+
+  if (!area) return;
+
+  const emailInput = area.querySelector(".email-cancelamento");
+  const codigoInput = area.querySelector(".codigo-cancelamento");
+  const mensagemCancelamento = area.querySelector(".mensagem-cancelamento");
+  const botao = area.querySelector(".botao-confirmar-cancelamento");
+
+  const email = emailInput.value.trim();
+  const codigo = codigoInput.value.trim();
+
+  mensagemCancelamento.textContent = "";
+  mensagemCancelamento.className = "mensagem-cancelamento";
+
+  if (!email) {
+    mensagemCancelamento.textContent = "Informe o e-mail usado para solicitar o código.";
+    mensagemCancelamento.classList.add("erro");
+    return;
+  }
+
+  if (!codigo) {
+    mensagemCancelamento.textContent = "Informe o código recebido por e-mail.";
+    mensagemCancelamento.classList.add("erro");
+    return;
+  }
+
+  botao.disabled = true;
+  botao.textContent = "Confirmando...";
+
+  try {
+    const resultado = await chamarApi("confirmarCancelamentoPermuta", {
+      linha: linha,
+      email: email,
+      codigo: codigo
+    });
+
+    mensagemCancelamento.textContent =
+      resultado.mensagem || "Cancelamento registrado com sucesso.";
+    mensagemCancelamento.classList.add("sucesso");
+
+    setTimeout(() => {
+      consultarPermutasFuturas();
+    }, 1200);
+
+  } catch (erro) {
+    mensagemCancelamento.textContent = erro.message;
+    mensagemCancelamento.classList.add("erro");
+
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Confirmar Cancelamento";
+  }
 }
