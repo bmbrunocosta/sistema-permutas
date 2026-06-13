@@ -312,11 +312,13 @@ function exibirPermutasFuturas(permutas) {
 
         <div class="area-cancelamento" id="cancelamento-${escaparHtml(permuta.linha)}">
           <input type="email" class="email-cancelamento" placeholder="E-mail para confirmação">
+
           <button type="button" class="botao-enviar-codigo" data-linha="${escaparHtml(permuta.linha)}">
             Enviar Código
           </button>
 
           <input type="text" class="codigo-cancelamento" inputmode="numeric" maxlength="6" placeholder="Código recebido">
+
           <button type="button" class="botao-confirmar-cancelamento" data-linha="${escaparHtml(permuta.linha)}">
             Confirmar Cancelamento
           </button>
@@ -324,7 +326,7 @@ function exibirPermutasFuturas(permutas) {
           <div class="mensagem-cancelamento"></div>
         </div>
       `
-      : "";
+      : gerarAvisoCancelamentoIndisponivel(permuta);
 
     html += `
       <div class="card-permuta">
@@ -360,6 +362,18 @@ function verificarPodeCancelar(valor) {
     texto === "SIM" ||
     texto === "1"
   );
+}
+
+function gerarAvisoCancelamentoIndisponivel(permuta) {
+  const motivo = String(permuta.motivoBloqueioCancelamento || "").trim();
+
+  if (!motivo) return "";
+
+  return `
+    <div class="aviso-cancelamento-indisponivel">
+      Cancelamento indisponível: ${escaparHtml(motivo)}
+    </div>
+  `;
 }
 
 function obterClasseStatus(status) {
