@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbzmP4rMPuEntL74Q1UCwTbuORTcMt5imY2zEK8-nV-G-Ur9AJheIxk2BB2zr2rZEvLBSA/exec";
+const URL_API = "https://script.google.com/macros/s/AKfycby4itEF-XCzg3x0QUeaM14PEmtY3iEQkvtMzlCOcFSJPS0VYeOZ-rms0Y7y725qA1ux2Q/exec";
 
 const rgEntra = document.getElementById("rgEntra");
 const rgSai = document.getElementById("rgSai");
@@ -19,6 +19,7 @@ const resultadoConsulta = document.getElementById("resultadoConsulta");
 let militaresPorRG = {};
 let timerConsultaEntra = null;
 let timerConsultaSai = null;
+let ultimoRgConsultado = "";
 
 carregarMilitares();
 
@@ -40,8 +41,8 @@ async function chamarApi(acao, dados = {}) {
 
   const resultado = await resposta.json();
 
-  if (!resultado.sucesso) {
-    throw new Error(resultado.mensagem || "Erro ao executar a ação.");
+  if (resultado.sucesso === false || resultado.ok === false) {
+    throw new Error(resultado.mensagem || resultado.erro || "Erro ao executar a ação.");
   }
 
   return resultado;
@@ -50,15 +51,19 @@ async function chamarApi(acao, dados = {}) {
 async function carregarMilitares() {
   try {
     const resultado = await chamarApi("carregarMilitares");
-    const militares = resultado.militares || [];
+    const militares = resultado.militares || resultado.resposta || [];
 
     militaresPorRG = {};
 
     militares.forEach((militar) => {
-      militaresPorRG[militar.rg] = militar;
+      const rg = limparRG(militar.rg || militar.RG || militar.registroGeral);
+
+      if (rg) {
+        militaresPorRG[rg] = militar;
+      }
     });
 
-    console.log("Militares carregados:", militares.length);
+    console.log("Militares carregados:", Object.keys(militaresPorRG).length);
 
   } catch (erro) {
     militaresPorRG = {};
@@ -110,14 +115,20 @@ btnConsultar.addEventListener("click", () => {
   consultarPermutasFuturas();
 });
 
+resultadoConsulta.addEventListener("input", (e) => {
+  if (e.target.classList.contains("codigo-cancelamento")) {
+    e.target.value = String(e.target.value || "").replace(/\D/g, "").slice(0, 6);
+  }
+});
+
 resultadoConsulta.addEventListener("click", (e) => {
   const botaoCancelar = e.target.closest(".botao-cancelar");
   const botaoEnviarCodigo = e.target.closest(".botao-enviar-codigo");
   const botaoConfirmarCancelamento = e.target.closest(".botao-confirmar-cancelamento");
 
   if (botaoCancelar) {
-    const linha = botaoCancelar.dataset.linha;
-    const area = document.getElementById("cancelamento-" + linha);
+    const chave = botaoCancelar.dataset.chave;
+    const area = document.getElementById("cancelamento-" + chave);
 
     if (area) {
       area.classList.toggle("ativa");
@@ -127,24 +138,45 @@ resultadoConsulta.addEventListener("click", (e) => {
   }
 
   if (botaoEnviarCodigo) {
-    solicitarCodigoCancelamento(
-      botaoEnviarCodigo.dataset.linha,
-      botaoEnviarCodigo.dataset.rgConsulta
-    );
+    solicitarCodigoCancelamento({
+      chave: botaoEnviarCodigo.dataset.chave,
+      linha: botaoEnviarCodigo.dataset.linha,
+      idPermuta: botaoEnviarCodigo.dataset.idPermuta,
+      rgConsulta: botaoEnviarCodigo.dataset.rgConsulta
+    });
     return;
   }
 
   if (botaoConfirmarCancelamento) {
-    confirmarCancelamento(
-      botaoConfirmarCancelamento.dataset.linha,
-      botaoConfirmarCancelamento.dataset.rgConsulta
-    );
+    confirmarCancelamento({
+      chave: botaoConfirmarCancelamento.dataset.chave,
+      linha: botaoConfirmarCancelamento.dataset.linha,
+      idPermuta: botaoConfirmarCancelamento.dataset.idPermuta,
+      rgConsulta: botaoConfirmarCancelamento.dataset.rgConsulta
+    });
     return;
   }
 });
 
 function limparRG(valor) {
   return String(valor || "").replace(/\D/g, "").slice(0, 7);
+}
+
+function normalizarEmail(valor) {
+  return String(valor || "").trim().toLowerCase();
+}
+
+function obterEmailMilitar(militar) {
+  if (!militar) return "";
+
+  return normalizarEmail(
+    militar.email ||
+    militar.eMail ||
+    militar.Email ||
+    militar.EMAIL ||
+    militar.emailCadastrado ||
+    militar.emailCadastro
+  );
 }
 
 function tratarDigitacaoRG(input, elementoResultado, tipo) {
@@ -181,9 +213,20 @@ function mostrarIdentificacaoLocal(input, elementoResultado) {
   const militar = militaresPorRG[rg];
 
   if (militar) {
-    elementoResultado.textContent = militar.identificacao;
+    elementoResultado.textContent = militar.identificacao || montarIdentificacaoMilitar(militar);
     elementoResultado.classList.remove("erro-identificacao");
   }
+}
+
+function montarIdentificacaoMilitar(militar) {
+  const partes = [];
+
+  if (militar.postoGrad) partes.push(militar.postoGrad);
+  if (militar.nomeGuerra) partes.push(militar.nomeGuerra);
+  if (militar.qbmp) partes.push(militar.qbmp);
+  if (militar.rg) partes.push("RG " + militar.rg);
+
+  return partes.join(" ");
 }
 
 function verificarPrazoPermuta() {
@@ -234,13 +277,13 @@ form.addEventListener("submit", async (e) => {
 
   try {
     const resultado = await chamarApi("enviarPermuta", dados);
-    const resposta = resultado.resposta;
+    const resposta = resultado.resposta || resultado;
 
     mensagem.innerHTML =
-      escaparHtml(resposta.mensagem) +
+      escaparHtml(resposta.mensagem || "Permuta enviada com sucesso.") +
       "<br><br><strong>Data do serviço:</strong> " + formatarDataBrasileira(dados.dataServico) +
-      "<br><strong>Entra:</strong> " + escaparHtml(resposta.militarEntra) +
-      "<br><strong>Sai:</strong> " + escaparHtml(resposta.militarSai);
+      "<br><strong>Entra:</strong> " + escaparHtml(resposta.militarEntra || resposta.nomeEntra || "") +
+      "<br><strong>Sai:</strong> " + escaparHtml(resposta.militarSai || resposta.nomeSai || "");
 
     mensagem.className = "mensagem sucesso";
 
@@ -269,6 +312,7 @@ async function consultarPermutasFuturas() {
   const rg = limparRG(rgConsulta.value);
 
   resultadoConsulta.innerHTML = "";
+  ultimoRgConsultado = rg;
 
   if (rg.length < 4) {
     resultadoConsulta.innerHTML =
@@ -281,10 +325,14 @@ async function consultarPermutasFuturas() {
 
   try {
     const resultado = await chamarApi("consultarPermutasFuturas", {
-      rg: rg
+      rg: rg,
+      rgConsulta: rg
     });
 
-    exibirPermutasFuturas(resultado.resposta || []);
+    const resposta = resultado.resposta || resultado;
+    const permutas = Array.isArray(resposta) ? resposta : (resposta.permutas || []);
+
+    exibirPermutasFuturas(permutas, rg);
 
   } catch (erro) {
     resultadoConsulta.innerHTML =
@@ -295,7 +343,7 @@ async function consultarPermutasFuturas() {
   }
 }
 
-function exibirPermutasFuturas(permutas) {
+function exibirPermutasFuturas(permutas, rgConsultadoParametro) {
   console.log("Permutas recebidas:", permutas);
 
   if (!permutas || permutas.length === 0) {
@@ -304,52 +352,58 @@ function exibirPermutasFuturas(permutas) {
     return;
   }
 
-  const rgConsultado = limparRG(rgConsulta.value);
+  const rgConsultado = limparRG(rgConsultadoParametro || ultimoRgConsultado || rgConsulta.value);
 
   let html = "";
 
-  permutas.forEach((permuta) => {
+  permutas.forEach((permuta, indice) => {
+    const chave = "p" + indice;
     const classeStatus = obterClasseStatus(permuta.status);
     const podeCancelar = verificarPodeCancelar(permuta.podeCancelar);
+    const linha = String(permuta.linha || permuta.row || permuta.numeroLinha || "").trim();
+    const idPermuta = String(permuta.idPermuta || permuta.id || permuta.identificador || linha).trim();
+    const dataServicoTexto = permuta.dataServico || permuta.data || permuta.dataServicoFormatada || "";
+    const militarEntra = permuta.militarEntra || permuta.nomeEntra || permuta.entra || "";
+    const militarSai = permuta.militarSai || permuta.nomeSai || permuta.sai || "";
 
     const botaoCancelar = podeCancelar
       ? `
-        <button type="button" class="botao-cancelar" data-linha="${escaparHtml(permuta.linha)}">
+        <button type="button" class="botao-cancelar" data-chave="${escaparHtml(chave)}">
           Solicitar Cancelamento
         </button>
 
-        <div class="area-cancelamento" id="cancelamento-${escaparHtml(permuta.linha)}">
-          <input type="email" class="email-cancelamento" placeholder="E-mail cadastrado no RG consultado">
+        <div class="area-cancelamento" id="cancelamento-${escaparHtml(chave)}">
+          <input type="email" class="email-cancelamento" placeholder="E-mail cadastrado no RG consultado" autocomplete="email">
 
-          <button type="button" class="botao-enviar-codigo" data-linha="${escaparHtml(permuta.linha)}" data-rg-consulta="${escaparHtml(rgConsultado)}">
+          <button type="button" class="botao-enviar-codigo" data-chave="${escaparHtml(chave)}" data-linha="${escaparHtml(linha)}" data-id-permuta="${escaparHtml(idPermuta)}" data-rg-consulta="${escaparHtml(rgConsultado)}">
             Enviar Código
           </button>
 
           <input type="text" class="codigo-cancelamento" inputmode="numeric" maxlength="6" placeholder="Código recebido">
 
-          <button type="button" class="botao-confirmar-cancelamento" data-linha="${escaparHtml(permuta.linha)}" data-rg-consulta="${escaparHtml(rgConsultado)}">
+          <button type="button" class="botao-confirmar-cancelamento" data-chave="${escaparHtml(chave)}" data-linha="${escaparHtml(linha)}" data-id-permuta="${escaparHtml(idPermuta)}" data-rg-consulta="${escaparHtml(rgConsultado)}">
             Confirmar Cancelamento
           </button>
 
           <div class="mensagem-cancelamento"></div>
         </div>
       `
-      : "";
+      : gerarAvisoCancelamentoIndisponivel(permuta);
 
     html += `
       <div class="card-permuta">
-        <div class="data">${escaparHtml(permuta.dataServico)}</div>
+        <div class="data">${escaparHtml(dataServicoTexto)}</div>
 
         <div class="linha-permuta">
-          <span class="rotulo">Entra:</span> ${escaparHtml(permuta.militarEntra)}
+          <span class="rotulo">Entra:</span> ${escaparHtml(militarEntra)}
         </div>
 
         <div class="linha-permuta">
-          <span class="rotulo">Sai:</span> ${escaparHtml(permuta.militarSai)}
+          <span class="rotulo">Sai:</span> ${escaparHtml(militarSai)}
         </div>
 
         <div class="status ${classeStatus}">
-          ${escaparHtml(permuta.status)}
+          ${escaparHtml(permuta.status || "PENDENTE")}
         </div>
 
         ${botaoCancelar}
@@ -373,7 +427,12 @@ function verificarPodeCancelar(valor) {
 }
 
 function gerarAvisoCancelamentoIndisponivel(permuta) {
-  const motivo = String(permuta.motivoBloqueioCancelamento || "").trim();
+  const motivo = String(
+    permuta.motivoBloqueioCancelamento ||
+    permuta.motivoBloqueio ||
+    permuta.motivoCancelamentoBloqueado ||
+    ""
+  ).trim();
 
   if (!motivo) return "";
 
@@ -437,8 +496,52 @@ function tentarProcessarPermuta(linha, tentativa) {
   }, atraso);
 }
 
-async function solicitarCodigoCancelamento(linha, rgConsultaCancelamento) {
-  const area = document.getElementById("cancelamento-" + linha);
+function validarEmailCancelamento(rgConsultado, email) {
+  const emailNormalizado = normalizarEmail(email);
+
+  if (!emailNormalizado) {
+    return "Informe o e-mail cadastrado para o RG consultado.";
+  }
+
+  const militarConsultado = militaresPorRG[rgConsultado];
+  const emailCadastrado = obterEmailMilitar(militarConsultado);
+
+  // Esta conferência local só acontece se a base enviada para o site trouxer o e-mail.
+  // A validação definitiva precisa continuar no Apps Script, dentro da API.
+  if (emailCadastrado && emailNormalizado !== emailCadastrado) {
+    return "O e-mail informado não pertence ao RG consultado. Informe o e-mail cadastrado para esse militar.";
+  }
+
+  return "";
+}
+
+function montarPayloadCancelamento(params, dadosExtras = {}) {
+  const linha = String(params.linha || "").trim();
+  const idPermuta = String(params.idPermuta || linha || "").trim();
+  const rgConsultado = limparRG(params.rgConsulta || ultimoRgConsultado || rgConsulta.value);
+
+  return {
+    linha: linha,
+    row: linha,
+    idPermuta: idPermuta,
+    id: idPermuta,
+    rgConsulta: rgConsultado,
+    rg: rgConsultado,
+    ...dadosExtras
+  };
+}
+
+async function solicitarCodigoCancelamento(params, rgConsultaCancelamento) {
+  if (!params || typeof params !== "object") {
+    params = {
+      chave: params,
+      linha: params,
+      idPermuta: params,
+      rgConsulta: rgConsultaCancelamento
+    };
+  }
+
+  const area = document.getElementById("cancelamento-" + params.chave);
 
   if (!area) return;
 
@@ -446,8 +549,8 @@ async function solicitarCodigoCancelamento(linha, rgConsultaCancelamento) {
   const mensagemCancelamento = area.querySelector(".mensagem-cancelamento");
   const botao = area.querySelector(".botao-enviar-codigo");
 
-  const email = emailInput.value.trim();
-  const rgConsultado = limparRG(rgConsultaCancelamento || rgConsulta.value);
+  const email = normalizarEmail(emailInput.value);
+  const rgConsultado = limparRG(params.rgConsulta || ultimoRgConsultado || rgConsulta.value);
 
   mensagemCancelamento.textContent = "";
   mensagemCancelamento.className = "mensagem-cancelamento";
@@ -458,8 +561,10 @@ async function solicitarCodigoCancelamento(linha, rgConsultaCancelamento) {
     return;
   }
 
-  if (!email) {
-    mensagemCancelamento.textContent = "Informe o e-mail cadastrado para o RG consultado.";
+  const erroEmail = validarEmailCancelamento(rgConsultado, email);
+
+  if (erroEmail) {
+    mensagemCancelamento.textContent = erroEmail;
     mensagemCancelamento.classList.add("erro");
     return;
   }
@@ -468,14 +573,13 @@ async function solicitarCodigoCancelamento(linha, rgConsultaCancelamento) {
   botao.textContent = "Enviando...";
 
   try {
-    const resultado = await chamarApi("solicitarCodigoCancelamentoPermuta", {
-      linha: linha,
-      rgConsulta: rgConsultado,
-      email: email
-    });
+    const resultado = await chamarApi("solicitarCodigoCancelamentoPermuta", montarPayloadCancelamento(params, {
+      email: email,
+      emailConfirmacao: email
+    }));
 
     mensagemCancelamento.textContent =
-      resultado.mensagem || "Código enviado para o e-mail informado.";
+      resultado.mensagem || "Código enviado para o e-mail cadastrado no RG consultado.";
     mensagemCancelamento.classList.add("sucesso");
 
   } catch (erro) {
@@ -488,8 +592,17 @@ async function solicitarCodigoCancelamento(linha, rgConsultaCancelamento) {
   }
 }
 
-async function confirmarCancelamento(linha, rgConsultaCancelamento) {
-  const area = document.getElementById("cancelamento-" + linha);
+async function confirmarCancelamento(params, rgConsultaCancelamento) {
+  if (!params || typeof params !== "object") {
+    params = {
+      chave: params,
+      linha: params,
+      idPermuta: params,
+      rgConsulta: rgConsultaCancelamento
+    };
+  }
+
+  const area = document.getElementById("cancelamento-" + params.chave);
 
   if (!area) return;
 
@@ -498,10 +611,11 @@ async function confirmarCancelamento(linha, rgConsultaCancelamento) {
   const mensagemCancelamento = area.querySelector(".mensagem-cancelamento");
   const botao = area.querySelector(".botao-confirmar-cancelamento");
 
-  const email = emailInput.value.trim();
-  const codigo = codigoInput.value.trim();
-  const rgConsultado = limparRG(rgConsultaCancelamento || rgConsulta.value);
+  const email = normalizarEmail(emailInput.value);
+  const codigo = String(codigoInput.value || "").replace(/\D/g, "").slice(0, 6);
+  const rgConsultado = limparRG(params.rgConsulta || ultimoRgConsultado || rgConsulta.value);
 
+  codigoInput.value = codigo;
   mensagemCancelamento.textContent = "";
   mensagemCancelamento.className = "mensagem-cancelamento";
 
@@ -511,8 +625,10 @@ async function confirmarCancelamento(linha, rgConsultaCancelamento) {
     return;
   }
 
-  if (!email) {
-    mensagemCancelamento.textContent = "Informe o e-mail cadastrado para o RG consultado.";
+  const erroEmail = validarEmailCancelamento(rgConsultado, email);
+
+  if (erroEmail) {
+    mensagemCancelamento.textContent = erroEmail;
     mensagemCancelamento.classList.add("erro");
     return;
   }
@@ -527,12 +643,11 @@ async function confirmarCancelamento(linha, rgConsultaCancelamento) {
   botao.textContent = "Confirmando...";
 
   try {
-    const resultado = await chamarApi("confirmarCancelamentoPermuta", {
-      linha: linha,
-      rgConsulta: rgConsultado,
+    const resultado = await chamarApi("confirmarCancelamentoPermuta", montarPayloadCancelamento(params, {
       email: email,
+      emailConfirmacao: email,
       codigo: codigo
-    });
+    }));
 
     mensagemCancelamento.textContent =
       resultado.mensagem || "Cancelamento registrado com sucesso.";
