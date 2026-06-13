@@ -73,9 +73,9 @@ v3 = versão com interface no GitHub Pages e backend em Google Apps Script
 
 ## Versão atual
 
-Versão atual: v3.65
+Versão atual: v3.66
 
-A versão v3.65 indica que o sistema utiliza a interface hospedada no GitHub Pages, com backend/API na implantação 65 do Google Apps Script.
+A versão v3.66 indica que o sistema utiliza a interface hospedada no GitHub Pages, com backend/API na implantação 66 do Google Apps Script.
 
 ## Observação
 
