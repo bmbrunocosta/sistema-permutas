@@ -127,12 +127,18 @@ resultadoConsulta.addEventListener("click", (e) => {
   }
 
   if (botaoEnviarCodigo) {
-    solicitarCodigoCancelamento(botaoEnviarCodigo.dataset.linha);
+    solicitarCodigoCancelamento(
+      botaoEnviarCodigo.dataset.linha,
+      botaoEnviarCodigo.dataset.rgConsulta
+    );
     return;
   }
 
   if (botaoConfirmarCancelamento) {
-    confirmarCancelamento(botaoConfirmarCancelamento.dataset.linha);
+    confirmarCancelamento(
+      botaoConfirmarCancelamento.dataset.linha,
+      botaoConfirmarCancelamento.dataset.rgConsulta
+    );
     return;
   }
 });
@@ -298,6 +304,8 @@ function exibirPermutasFuturas(permutas) {
     return;
   }
 
+  const rgConsultado = limparRG(rgConsulta.value);
+
   let html = "";
 
   permutas.forEach((permuta) => {
@@ -311,22 +319,22 @@ function exibirPermutasFuturas(permutas) {
         </button>
 
         <div class="area-cancelamento" id="cancelamento-${escaparHtml(permuta.linha)}">
-          <input type="email" class="email-cancelamento" placeholder="E-mail para confirmação">
+          <input type="email" class="email-cancelamento" placeholder="E-mail cadastrado no RG consultado">
 
-          <button type="button" class="botao-enviar-codigo" data-linha="${escaparHtml(permuta.linha)}">
+          <button type="button" class="botao-enviar-codigo" data-linha="${escaparHtml(permuta.linha)}" data-rg-consulta="${escaparHtml(rgConsultado)}">
             Enviar Código
           </button>
 
           <input type="text" class="codigo-cancelamento" inputmode="numeric" maxlength="6" placeholder="Código recebido">
 
-          <button type="button" class="botao-confirmar-cancelamento" data-linha="${escaparHtml(permuta.linha)}">
+          <button type="button" class="botao-confirmar-cancelamento" data-linha="${escaparHtml(permuta.linha)}" data-rg-consulta="${escaparHtml(rgConsultado)}">
             Confirmar Cancelamento
           </button>
 
           <div class="mensagem-cancelamento"></div>
         </div>
       `
-      : gerarAvisoCancelamentoIndisponivel(permuta);
+      : "";
 
     html += `
       <div class="card-permuta">
@@ -429,7 +437,7 @@ function tentarProcessarPermuta(linha, tentativa) {
   }, atraso);
 }
 
-async function solicitarCodigoCancelamento(linha) {
+async function solicitarCodigoCancelamento(linha, rgConsultaCancelamento) {
   const area = document.getElementById("cancelamento-" + linha);
 
   if (!area) return;
@@ -439,12 +447,19 @@ async function solicitarCodigoCancelamento(linha) {
   const botao = area.querySelector(".botao-enviar-codigo");
 
   const email = emailInput.value.trim();
+  const rgConsultado = limparRG(rgConsultaCancelamento || rgConsulta.value);
 
   mensagemCancelamento.textContent = "";
   mensagemCancelamento.className = "mensagem-cancelamento";
 
+  if (!rgConsultado) {
+    mensagemCancelamento.textContent = "RG da consulta não identificado. Atualize a consulta e tente novamente.";
+    mensagemCancelamento.classList.add("erro");
+    return;
+  }
+
   if (!email) {
-    mensagemCancelamento.textContent = "Informe o e-mail para receber o código.";
+    mensagemCancelamento.textContent = "Informe o e-mail cadastrado para o RG consultado.";
     mensagemCancelamento.classList.add("erro");
     return;
   }
@@ -455,6 +470,7 @@ async function solicitarCodigoCancelamento(linha) {
   try {
     const resultado = await chamarApi("solicitarCodigoCancelamentoPermuta", {
       linha: linha,
+      rgConsulta: rgConsultado,
       email: email
     });
 
@@ -472,7 +488,7 @@ async function solicitarCodigoCancelamento(linha) {
   }
 }
 
-async function confirmarCancelamento(linha) {
+async function confirmarCancelamento(linha, rgConsultaCancelamento) {
   const area = document.getElementById("cancelamento-" + linha);
 
   if (!area) return;
@@ -484,12 +500,19 @@ async function confirmarCancelamento(linha) {
 
   const email = emailInput.value.trim();
   const codigo = codigoInput.value.trim();
+  const rgConsultado = limparRG(rgConsultaCancelamento || rgConsulta.value);
 
   mensagemCancelamento.textContent = "";
   mensagemCancelamento.className = "mensagem-cancelamento";
 
+  if (!rgConsultado) {
+    mensagemCancelamento.textContent = "RG da consulta não identificado. Atualize a consulta e tente novamente.";
+    mensagemCancelamento.classList.add("erro");
+    return;
+  }
+
   if (!email) {
-    mensagemCancelamento.textContent = "Informe o e-mail usado para solicitar o código.";
+    mensagemCancelamento.textContent = "Informe o e-mail cadastrado para o RG consultado.";
     mensagemCancelamento.classList.add("erro");
     return;
   }
@@ -506,6 +529,7 @@ async function confirmarCancelamento(linha) {
   try {
     const resultado = await chamarApi("confirmarCancelamentoPermuta", {
       linha: linha,
+      rgConsulta: rgConsultado,
       email: email,
       codigo: codigo
     });
