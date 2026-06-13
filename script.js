@@ -290,6 +290,8 @@ async function consultarPermutasFuturas() {
 }
 
 function exibirPermutasFuturas(permutas) {
+  console.log("Permutas recebidas:", permutas);
+  
   if (!permutas || permutas.length === 0) {
     resultadoConsulta.innerHTML =
       '<div class="mensagem-consulta">Nenhuma permuta futura encontrada para este RG.</div>';
